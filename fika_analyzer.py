@@ -1,8 +1,9 @@
 import logging
-import argparse
 from datetime import date
 
 import requests
+
+ACTION_API_URL = "https://sv.wikipedia.org/w/api.php"
 
 
 def get_pageviews(
@@ -55,7 +56,7 @@ def send_pageview_request(
               project=project,
               access=access,
               agent=agent,
-              article=page,
+              article=page.replace("/", "%2F"),
               granularity=granularity,
               start=start_date,
               end=end_date
@@ -73,8 +74,8 @@ def get_number_of_questions():
     """
 
     response = send_sections_request(
-        api_url="https://sv.wikipedia.org/w/api.php",
-        page="Wikipedia:Fikarummet/Frågor"
+        ACTION_API_URL,
+        "Wikipedia:Fikarummet/Frågor"
     )
     sections = response["parse"]["sections"]
     number_of_questions = 0
@@ -90,6 +91,7 @@ def send_sections_request(api_url, page):
 
     Returns the JSON response for the request, as a dictionary.
     """
+
     response = requests.get(
         url=api_url,
         params={
@@ -99,6 +101,42 @@ def send_sections_request(api_url, page):
             "prop": "sections"
         }
     ).json()
+    logging.debug("Response: {}".format(response))
+    return response
+
+
+def get_number_of_invitees():
+    """Get the number of users invited to Fikarummet.
+
+    The number of invitees is retrieved from a category, that each
+    user gets when they receive the invitation.
+    """
+
+    response = send_category_request(
+        ACTION_API_URL,
+        "Kategori:Wikipedianer som har fått en inbjudan till fikarummet"
+    )
+    pages = response["query"]["pages"]
+    category_id = list(pages.keys())[0]
+    number_of_invitees = pages[category_id]["categoryinfo"]["pages"]
+    return number_of_invitees
+
+
+def send_category_request(api_url, category):
+    """Send a request to the action API, asking for info for a category.
+
+    Returns the JSON response for the request, as a dictionary.
+    """
+    response = requests.get(
+        url=api_url,
+        params={
+            "action": "query",
+            "format": "json",
+            "prop": "categoryinfo",
+            "titles": category
+        }
+    ).json()
+    logging.debug("Response: {}".format(response))
     return response
 
 
@@ -113,6 +151,13 @@ if __name__ == "__main__":
         "20161209",
         date.today().strftime("%Y%m%d")
     )
-    print("Pageviews: {}".format(pageviews))
-    number_of_questions = get_number_of_questions()
-    print("Number of questions: {}".format(number_of_questions))
+    print("Pageviews for Fikarummet: {}".format(pageviews))
+    pageviews = get_pageviews(
+        "sv.wikipedia.org",
+        "Wikipedia:Fikarummet/Frågor",
+        "20161209",
+        date.today().strftime("%Y%m%d")
+    )
+    print("Pageviews for Fikarummet/Frågor: {}".format(pageviews))
+    print("Number of questions: {}".format(get_number_of_questions()))
+    print("Number of invitees: {}".format(get_number_of_invitees()))
