@@ -1,5 +1,6 @@
 import logging
 import argparse
+from datetime import date
 
 import requests
 
@@ -65,42 +66,53 @@ def send_pageview_request(
     return response
 
 
+def get_number_of_questions():
+    """Get the number of questions from the questions page.
+
+    The number of sections are used to count questions.
+    """
+
+    response = send_sections_request(
+        api_url="https://sv.wikipedia.org/w/api.php",
+        page="Wikipedia:Fikarummet/Frågor"
+    )
+    sections = response["parse"]["sections"]
+    number_of_questions = 0
+    for section in sections:
+        if int(section["level"]) == 2:
+            # Each question creates a section of level 2.
+            number_of_questions += 1
+    return number_of_questions
+
+
+def send_sections_request(api_url, page):
+    """Send a request to the action API, asking for the sections of a page.
+
+    Returns the JSON response for the request, as a dictionary.
+    """
+    response = requests.get(
+        url=api_url,
+        params={
+            "action": "parse",
+            "format": "json",
+            "page": page,
+            "prop": "sections"
+        }
+    ).json()
+    return response
+
+
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(message)s",
         level=logging.DEBUG
     )
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--project",
-        "-p",
-        help="The project to retrieve metrics from, e.g. 'sv.wikipedia.org'.",
-        required=True
-    )
-    parser.add_argument(
-        "--pageview-page",
-        "-v",
-        help=("The page, including namespace, to get pageviews for,"
-              "e.g. 'Wikipedia:Fikarummet'."),
-        required=True
-    )
-    parser.add_argument(
-        "--start-date",
-        "-s",
-        help="The start date of the metrics, in the format YYYYMMDD.",
-        required=True
-    )
-    parser.add_argument(
-        "--end-date",
-        "-e",
-        help="The end date of the metrics, in the format YYYYMMDD.",
-        required=True
-    )
-    args = parser.parse_args()
     pageviews = get_pageviews(
-        args.project,
-        args.pageview_page,
-        args.start_date,
-        args.end_date
+        "sv.wikipedia.org",
+        "Wikipedia:Fikarummet",
+        "20161209",
+        date.today().strftime("%Y%m%d")
     )
     print("Pageviews: {}".format(pageviews))
+    number_of_questions = get_number_of_questions()
+    print("Number of questions: {}".format(number_of_questions))
