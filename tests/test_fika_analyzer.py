@@ -6,10 +6,6 @@ import fika_analyzer
 
 class FikaAnalyzerTests(TestCase):
     def test_get_pageviews(self):
-        project = "www.wiki.org"
-        page = "Test"
-        start_date = "20161209"
-        end_date = "20161210"
         with patch("fika_analyzer.send_pageview_request") as \
              mock_send_pageview_request:
             mock_response = {
@@ -20,10 +16,10 @@ class FikaAnalyzerTests(TestCase):
             }
             mock_send_pageview_request.return_value = mock_response
             result = fika_analyzer.get_pageviews(
-                project,
-                page,
-                start_date,
-                end_date
+                project="www.wiki.org",
+                page="Test",
+                start_date="20161209",
+                end_date="20161210"
             )
             self.assertEqual(12, result)
 

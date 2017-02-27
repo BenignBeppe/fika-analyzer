@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import logging
 from datetime import date
 
@@ -145,6 +147,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(levelname)s - %(message)s",
         level=logging.DEBUG
     )
+    # Run with some default values for Fikarummet.
     pageviews = get_pageviews(
         "sv.wikipedia.org",
         "Wikipedia:Fikarummet",
